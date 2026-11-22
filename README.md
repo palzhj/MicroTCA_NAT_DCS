@@ -80,6 +80,7 @@ dcs/
 │   ├── crate-aliases.json          YOUR crates -- gitignored
 │   ├── amc-aliases.json    (crate, AMC slot) -> FEC name; NONE = empty slot
 │   ├── <name>/             config.json, config-shelf.json, crate.sdr, env
+│   │                       (all generated per site -- not tracked)
 │   └── hosts.snippet       generated, optional /etc/hosts
 ├── deploy/
 │   ├── docker-compose.yml  Prometheus + Grafana (+ image renderer)
@@ -89,6 +90,18 @@ dcs/
 ├── docs/screenshots/       rendered dashboards
 ├── abandoned/psensor/      the retired psensor bridge
 └── Makefile                make check / scan / restart / status / render
+```
+
+## What is not tracked
+
+`crates/<name>/config.json` (the sensor inventory), `crate.sdr` (its SDR cache)
+and `crates/crate-aliases.json` (your addresses) are produced against real
+hardware, so they stay local:
+
+```sh
+cp crates/crate-aliases.example.json crates/crate-aliases.json   # once, then edit
+python3 src/mch_inventory.py                                     # env files, file_sd
+make scan CRATE=CD1                                              # config.json + crate.sdr
 ```
 
 ## Credentials
