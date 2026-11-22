@@ -1,0 +1,18 @@
+{
+  "_comment": "EXAMPLE -- copy to crate-aliases.json and edit. That real file holds your site's IPs and is gitignored; this example is the tracked one. The IPs below are the NAT-MCH factory default, so a crate left unchanged is reachable on a bench network but indistinguishable from its neighbour -- give each crate its real address.",
+  "_port": "not configured: the exporter port is derived from the name (MCH1 -> 9291, TVT -> 9290) by src/mch_names.py",
+  "_disable": "to park a crate, delete its entry or wrap it in /* */ -- the loader strips C-style comments",
+
+  "crates": [
+    {
+      "name": "MCH1",
+      "ip": "192.168.1.41",
+      "site": "LAB"
+    },
+    {
+      "name": "MCH2",
+      "ip": "192.168.1.42",
+      "site": "LAB"
+    }
+  ]
+}

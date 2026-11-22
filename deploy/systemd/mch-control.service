@@ -1,0 +1,15 @@
+[Unit]
+Description=MicroTCA control endpoint (rescan button)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@ROOT@
+Environment=MCH_CONTROL_PORT=9390
+EnvironmentFile=-@ROOT@/crates/control.env
+ExecStart=/usr/bin/python3 -u src/mch_control.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

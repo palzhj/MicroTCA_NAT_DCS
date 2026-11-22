@@ -1,0 +1,25 @@
+[Unit]
+Description=MicroTCA IPMI exporter (%i)
+Documentation=file://@ROOT@/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# %i is the crate name from crates/crate-aliases.json (CD1, TVT, ...).
+# The port comes from crates/%i/env, which mch_inventory.py generates, so
+# enabling a new crate is one command and never edits this file.
+WorkingDirectory=@ROOT@
+Environment=MCH_PORT=9290
+EnvironmentFile=-@ROOT@/crates/%i/env
+# Each ipmitool call is one IPMI session: one long-lived process per crate,
+# pacing itself (sweep + 5 s gap), never two pollers on one MCH.
+ExecStart=/usr/bin/python3 -u src/mch_exporter.py \
+    --config crates/%i/config.json --port ${MCH_PORT} --interval 300
+Restart=on-failure
+RestartSec=30
+# a 445-sensor sweep is ~25 s; only give up if it really hangs
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target

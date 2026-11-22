@@ -1,0 +1,21 @@
+{
+  "_comment": "FEC names per (crate, AMC slot). These are assigned per installation, so they are a table, not a formula -- e.g. AMC1 of TVT..CD8 is FEC2..FEC10, but AMC2 of CD1 is FEC13. Fill in the slots you know; anything not listed still gets a name from 'fallback' so it is never blank. Restart mch-exporter@<crate> after editing; no rescan needed.",
+
+  "table": {
+    "TVT": {"1": "FEC2", "2":"NONE", "3":"NONE", "4":"NONE", "5":"NONE", "6":"NONE", "7":"NONE",  "8": "FEC110", "9": "FEC111", "10": "FEC112", "11": "FEC113",  "12":"NONE"},
+    "CD1": {"1": "FEC3"},
+    "CD2": {"1": "FEC4"},
+    "CD3": {"1": "FEC5", "7": "NONE"},
+    "CD4": {"1": "FEC6", "7": "NONE"},
+    "CD5": {"1": "FEC7"},
+    "CD6": {"1": "FEC8"},
+    "CD7": {"1": "FEC9"},
+    "CD8": {"1": "FEC10", "12":"NONE"}
+  },
+
+  "fallback": {
+    "_note": "applied only to slots missing from the table: FEC<per_crate * crate_number + slot>",
+    "prefix": "FEC",
+    "per_crate": 11
+  }
+}

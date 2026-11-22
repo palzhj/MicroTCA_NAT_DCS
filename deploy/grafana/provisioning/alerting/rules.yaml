@@ -1,0 +1,183 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: mtca
+    folder: MicroTCA
+    interval: 1m
+    rules:
+      - uid: mtca-exporter-down
+        title: MTCA exporter down
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'up{job=~"mtca.*"}'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: {type: reduce, expression: A, reducer: last, refId: B}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                - evaluator: {params: [1], type: lt}
+                  operator: {type: and}
+                  query: {params: [B]}
+                  reducer: {params: [], type: last}
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: "exporter {{ $labels.crate }} is not answering /metrics"
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+      - uid: mtca-sweep-failed
+        title: MTCA sweep failed
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'mch_sweep_success'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: {type: reduce, expression: A, reducer: last, refId: B}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                - evaluator: {params: [1], type: lt}
+                  operator: {type: and}
+                  query: {params: [B]}
+                  reducer: {params: [], type: last}
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: "crate {{ $labels.crate }} has not completed a sweep"
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+      - uid: mtca-amc-not-active
+        title: AMC not in M4
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'mch_sensor_state_info{name=~".*HS 0.*AMC.*", state!~"Transition to M4"} + 0'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: {type: reduce, expression: A, reducer: last, refId: B}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                - evaluator: {params: [0], type: gt}
+                  operator: {type: and}
+                  query: {params: [B]}
+                  reducer: {params: [], type: last}
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "AMC {{ $labels.name }} is not active ({{ $labels.state }})"
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+      - uid: mtca-amc-blind
+        title: AMC exposes no readable sensor
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: '(count by (crate, amc, fec) (mch_sensor_value{amc!="0"}) * on (crate, amc, fec) group_left(mstate) sum by (crate, amc, fec, mstate) (label_replace(label_replace(label_replace(mch_sensor_state_info{name=~".*HS 0.*AMC.*"}, "amc", "$1", "name", ".*HS 0[0-9]+ AMC([0-9]+)"), "mstate", "$1", "state", ".*(M[0-9]).*"), "fec", "$1", "name", "(FEC[0-9]+) .*"))) or (sum by (crate, amc, fec, mstate) (label_replace(label_replace(label_replace(mch_sensor_state_info{name=~".*HS 0.*AMC.*"}, "amc", "$1", "name", ".*HS 0[0-9]+ AMC([0-9]+)"), "mstate", "$1", "state", ".*(M[0-9]).*"), "fec", "$1", "name", "(FEC[0-9]+) .*")) * 0)'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: {type: reduce, expression: A, reducer: last, refId: B}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                - evaluator: {params: [1], type: lt}
+                  operator: {type: and}
+                  query: {params: [B]}
+                  reducer: {params: [], type: last}
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: "AMC {{ $labels.fec }} ({{ $labels.crate }} slot {{ $labels.amc }}) is {{ $labels.mstate }} but reads nothing"
+        noDataState: OK
+        execErrState: Error
+        isPaused: false
+      - uid: mtca-sum-mismatch
+        title: PM sum disagrees with its channels
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: prometheus
+            model:
+              editorMode: code
+              expr: 'mch_sum_mismatch'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model: {type: reduce, expression: A, reducer: last, refId: B}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                - evaluator: {params: [0], type: gt}
+                  operator: {type: and}
+                  query: {params: [B]}
+                  reducer: {params: [], type: last}
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "{{ $labels.pm }} reports {{ $labels.reported }} A but its channels add up to {{ $labels.channels }} A -- panel shows the channel total"
+        noDataState: OK
+        execErrState: Error
+        isPaused: false

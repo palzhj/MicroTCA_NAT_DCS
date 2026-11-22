@@ -1,0 +1,14 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: mtca-ops
+    receivers:
+      - uid: mtca-ops-email
+        type: email
+        # delivery needs SMTP under [smtp] in grafana.ini; until then the rules
+        # evaluate and show state in Alerting -> Alert rules
+        settings:
+          addresses: ops@example.com
+          singleEmail: false
+        disableResolveMessage: false

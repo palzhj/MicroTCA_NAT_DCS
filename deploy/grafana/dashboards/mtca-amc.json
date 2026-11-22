@@ -1,0 +1,361 @@
+{
+  "uid": "mtca-amc",
+  "title": "MicroTCA crates - AMC details",
+  "tags": [
+    "mtca",
+    "amc"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 2,
+  "refresh": "1m",
+  "editable": true,
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  },
+  "annotations": {
+    "list": []
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "crate",
+        "label": "Crate",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(up{job=\"mtca\"}, crate)",
+          "refId": "crate"
+        },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".+",
+        "sort": 1,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": []
+      },
+      {
+        "name": "rail",
+        "label": "Rail",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(mch_rail_signals{crate=~\"$crate\", amc!=\"0\", pair!~\".*[+].*\"}, pair)",
+          "refId": "rail"
+        },
+        "refresh": 2,
+        "multi": false,
+        "includeAll": false,
+        "sort": 1,
+        "current": {
+          "selected": true,
+          "text": "IO +3.3V",
+          "value": "IO +3.3V"
+        },
+        "options": []
+      }
+    ]
+  },
+  "links": [
+    {
+      "title": "Summary",
+      "url": "/d/mtca-overview",
+      "type": "link",
+      "icon": "external link",
+      "keepTime": true,
+      "targetBlank": false
+    }
+  ],
+  "panels": [
+    {
+      "type": "timeseries",
+      "id": 10,
+      "title": "Voltage (V) - $rail, every FEC",
+      "gridPos": {
+        "h": 15,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (crate, amc, fec) (mch_sensor_value{crate=~\"$crate\", amc!=\"0\", kind=\"voltage\", pair=\"$rail\"})",
+          "legendFormat": "{{fec}} ({{crate}}-AMC{{amc}})"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max",
+            "mean",
+            "min"
+          ],
+          "showLegend": true,
+          "sortBy": "Last *",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "volt",
+          "decimals": 3,
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 11,
+      "title": "Current (A) - $rail, every FEC",
+      "gridPos": {
+        "h": 15,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (crate, amc, fec) (mch_sensor_value{crate=~\"$crate\", amc!=\"0\", kind=\"current\", pair=\"$rail\"})",
+          "legendFormat": "{{fec}} ({{crate}}-AMC{{amc}})"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max",
+            "mean",
+            "min"
+          ],
+          "showLegend": true,
+          "sortBy": "Last *",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "amp",
+          "decimals": 3,
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "table",
+      "id": 12,
+      "title": "Rails in this crate (1=V only, 2=I only, 3=both)",
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (pair) (mch_rail_signals{crate=~\"$crate\", amc!=\"0\"})",
+          "instant": true,
+          "format": "table",
+          "legendFormat": "{{pair}}"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "crate": true,
+              "site": true,
+              "instance": true
+            },
+            "renameByName": {
+              "pair": "rail",
+              "Value": "signals"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "rail",
+            "desc": false
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "V only",
+                  "index": 0,
+                  "color": "yellow"
+                },
+                "2": {
+                  "text": "I only",
+                  "index": 1,
+                  "color": "orange"
+                },
+                "3": {
+                  "text": "V + I",
+                  "index": 2,
+                  "color": "green"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "table",
+      "id": 13,
+      "title": "AMC slot -> FEC (numeric sensors exposed)",
+      "gridPos": {
+        "h": 9,
+        "w": 16,
+        "x": 8,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(count by (crate, amc, fec) (mch_sensor_value{crate=~\"$crate\", amc!=\"0\"}) * on (crate, amc, fec) group_left(fru, mstate) sum by (crate, amc, fec, fru, mstate) (label_replace(label_replace(label_replace(label_replace(mch_sensor_state_info{crate=~\"$crate\", name=~\".*HS 0.*AMC.*\"}, \"amc\", \"$1\", \"name\", \".*HS 0[0-9]+ AMC([0-9]+)\"), \"mstate\", \"$1\", \"state\", \".*(M[0-9]).*\"), \"fec\", \"$1\", \"name\", \"(FEC[0-9]+) .*\"), \"fru\", \"$1\", \"name\", \".*HS 0+([0-9]+) AMC[0-9]+\"))) or (sum by (crate, amc, fec, fru, mstate) (label_replace(label_replace(label_replace(label_replace(mch_sensor_state_info{crate=~\"$crate\", name=~\".*HS 0.*AMC.*\"}, \"amc\", \"$1\", \"name\", \".*HS 0[0-9]+ AMC([0-9]+)\"), \"mstate\", \"$1\", \"state\", \".*(M[0-9]).*\"), \"fec\", \"$1\", \"name\", \"(FEC[0-9]+) .*\"), \"fru\", \"$1\", \"name\", \".*HS 0+([0-9]+) AMC[0-9]+\")) * 0)",
+          "instant": true,
+          "format": "table",
+          "legendFormat": "{{amc}}"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "site": true,
+              "instance": true
+            },
+            "renameByName": {
+              "fec": "FEC",
+              "fru": "FRU_ID",
+              "crate": "crate",
+              "amc": "slot",
+              "mstate": "M-state",
+              "Value": "numeric sensors exposed"
+            },
+            "indexByName": {
+              "fec": 0,
+              "crate": 1,
+              "amc": 2,
+              "fru": 3,
+              "mstate": 4,
+              "Value": 5
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "slot",
+            "desc": false
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "FEC"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Rescan ${__data.fields.crate}",
+                    "url": "http://127.0.0.1:9390/rescan?crate=${__data.fields.crate}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "description": "One row per AMC slot: its FEC name, the number of numeric sensor values it exposes (0 means the board answers but reports no readable value, e.g. 'ns'), and its FRU M-state. Click a FEC to rescan that crate (stops its exporter, re-inventories, restarts; ~4 min)."
+    }
+  ]
+}
