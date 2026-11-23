@@ -3,6 +3,8 @@
 
     GET /health
     GET /rescan?crate=CD1[&dry=1][&token=...]
+    GET /pause[?crate=CD1]      stop the exporter(s): yield the MCH
+    GET /resume[?crate=CD1]     start them again
     GET /status
 
 A rescan stops the crate's exporter, re-inventories the crate and starts the
@@ -41,6 +43,10 @@ lock = threading.Lock()
 def known_crates():
     from mch_names import load
     return {c["name"] for c in load(os.path.join(CRATES, "crate-aliases.json"))}
+
+
+def unit(verb, crate):
+    return subprocess.call(["systemctl", "--user", verb, "mch-exporter@%s" % crate])
 
 
 def run_scan(crate):
@@ -94,6 +100,25 @@ class Handler(BaseHTTPRequestHandler):
 
         if u.path.rstrip("/") == "/health":
             return self._send(200, {"ok": True, "crates": sorted(known_crates())})
+
+        if u.path.rstrip("/") in ("/pause", "/resume"):
+            if TOKEN and q.get("token") != TOKEN:
+                return self._send(403, {"error": "bad token"})
+            crate = q.get("crate", "")
+            known = known_crates()
+            if crate and crate not in known:
+                return self._send(404, {"error": "%s is not in crate-aliases.json" % crate})
+            targets = [crate] if crate else sorted(known)
+            verb = "stop" if u.path.rstrip("/") == "/pause" else "start"
+            results = {c: unit(verb, c) for c in targets}
+            with lock:
+                for c in targets:
+                    jobs.setdefault(c, {})["state"] = (
+                        "paused" if verb == "stop" else "starting")
+            return self._send(200, {"action": verb, "crates": results,
+                                    "note": "pause frees the MCH's session table "
+                                            "for other tooling; resume brings "
+                                            "data back on the next sweep"})
 
         if u.path.rstrip("/") == "/status":
             with lock:

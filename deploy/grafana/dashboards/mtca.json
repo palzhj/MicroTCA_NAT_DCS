@@ -83,7 +83,7 @@
       "id": 1,
       "gridPos": {
         "h": 3,
-        "w": 24,
+        "w": 18,
         "x": 0,
         "y": 0
       },
@@ -151,6 +151,27 @@
           }
         },
         "overrides": []
+      }
+    },
+    {
+      "type": "text",
+      "id": 20,
+      "title": "",
+      "transparent": false,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "**MCH access** &nbsp; [\u23f8 pause](http://127.0.0.1:9390/pause) \u00b7 [\u25b6 resume](http://127.0.0.1:9390/resume)\n\n<sub>pause frees the session table for firmware tooling; resume restores data on the next sweep</sub>"
       }
     },
     {
