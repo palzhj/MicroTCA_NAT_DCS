@@ -65,8 +65,8 @@
         "sort": 1,
         "current": {
           "selected": true,
-          "text": "IO +3.3V",
-          "value": "IO +3.3V"
+          "text": "IO 3.3V",
+          "value": "IO 3.3V"
         },
         "options": []
       }

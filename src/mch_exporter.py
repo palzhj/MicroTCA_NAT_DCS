@@ -56,6 +56,7 @@ DEFAULT_GAP = 5.0
 TRANSIT = "0x82"
 TARGET_TIMEOUT = 60      # seconds per target; one dead MMC must not stall a sweep
 TARGET_GAP = 0.5
+TARGET_RETRY_GAP = 2.0   # pause before re-trying a failed target
 
 RE_TEMP = re.compile(r"^(-?[\d.]+) degrees C$")
 RE_RPM = re.compile(r"^(\d+) RPM$")
@@ -184,18 +185,28 @@ def sweep(mch, cfg, sdr_cache, crate_name=None, fec_lookup=None):
         if i:
             time.sleep(TARGET_GAP)
         t0 = time.time()
-        try:
-            p = subprocess.run(sweep_cmd(mch, target, sdr_cache),
-                               capture_output=True, text=True, timeout=TARGET_TIMEOUT)
-            if p.returncode != 0:
-                raise RuntimeError(" ".join((p.stderr or p.stdout).split())[:200])
-            rows = parse_elist(p.stdout)
-        except Exception as exc:
+        rows, last_exc = None, None
+        for attempt in (1, 2):
+            try:
+                p = subprocess.run(sweep_cmd(mch, target, sdr_cache),
+                                   capture_output=True, text=True,
+                                   timeout=TARGET_TIMEOUT)
+                if p.returncode != 0:
+                    raise RuntimeError(" ".join((p.stderr or p.stdout).split())[:200])
+                rows = parse_elist(p.stdout)
+                break
+            except Exception as exc:
+                last_exc = exc
+                if attempt == 1:
+                    # bridged MMCs drop sessions on a busy IPMB; one retry
+                    # after a pause usually gets through
+                    time.sleep(TARGET_RETRY_GAP)
+        if rows is None:
             ok = False
             with lock:
                 stats["poll_errors"] += 1
-            print("sweep of %s failed: %s" % (target["id"], exc),
-                  file=sys.stderr, flush=True)
+            print("sweep of %s failed (%d tries): %s"
+                  % (target["id"], 2, last_exc), file=sys.stderr, flush=True)
             continue
         target_durations[target["id"]] = time.time() - t0
 
